@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/ide.h>
 
 #define CHRDEVBASE_MAJOR        200
 #define CHRDEVBASE_NAME         "chrdevbase"
@@ -16,6 +17,10 @@ static ssize_t chrdevbase_write(struct file *filp,
                                 const char __user *buf,
                                 size_t cnt,
                                 loff_t *offt);
+
+static char readbuf[100] = {0};       /* 读缓冲区 */
+static char writebuf[100] = {0};      /* 写缓冲区 */
+static char kerneldata[] = {"kernel data!"};
 
 /*
  * @brief 字符设备操作集合
@@ -46,15 +51,33 @@ static ssize_t chrdevbase_read(struct file *filep,
                                size_t cnt,
                                loff_t *offt)
 {
+        int ret = 0;
+
         printk("chrdevbase read!\n");
-        return 0;
+        memcpy(readbuf, kerneldata, sizeof(kerneldata));
+        ret = copy_to_user(buf, readbuf, cnt);
+        if (ret == -1)
+                printk("read data from kernel fail!\n");
+        else
+                printk("read data from kernel success!\n");
+
+        return ret;
 }
+
 static ssize_t chrdevbase_write(struct file *filp,
                                 const char __user *buf,
                                 size_t cnt, 
                                 loff_t *offt)
 {
+        int ret = 0;
+
         printk("chrdevbase write!\n");
+        ret = copy_from_user(writebuf, buf, cnt);
+        if (ret == -1)
+                printk("copy from user fail!\n");
+        else
+                printk("copy from user success!\n");
+
         return 0;
 }
 
